@@ -15,7 +15,15 @@ def _bool_env(name: str, default: str = "0") -> bool:
 class Config:
     # --- Flask ---
     SECRET_KEY = os.environ.get("SECRET_KEY", "lfa-dev-secret-change-me")
-    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_MB", "12")) * 1024 * 1024
+    # Defensive: an empty/invalid MAX_UPLOAD_MB must not crash app startup.
+    try:
+        MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_MB", "12")) * 1024 * 1024
+    except ValueError:
+        MAX_CONTENT_LENGTH = 12 * 1024 * 1024
+    try:
+        GRADCAM_MAX_UPLOAD_DIM = int(os.environ.get("GRADCAM_MAX_DIM", "1024"))
+    except ValueError:
+        GRADCAM_MAX_UPLOAD_DIM = 1024
 
     # --- Directories ---
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "data", "uploads")
@@ -30,7 +38,6 @@ class Config:
     # --- Grad-CAM ---
     GRADCAM_ENABLED = _bool_env("GRADCAM_ENABLED", "1")
     GRADCAM_LAYER_OVERRIDE = os.environ.get("GRADCAM_LAYER") or None
-    GRADCAM_MAX_UPLOAD_DIM = int(os.environ.get("GRADCAM_MAX_DIM", "1024"))
 
     # --- Model registry (single source of truth for model ids) ---
     MODEL_REGISTRY = {

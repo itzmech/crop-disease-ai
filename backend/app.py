@@ -17,10 +17,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 
 def create_app():
+    # Directories are resolved from THIS file's location, never the CWD,
+    # so the app boots regardless of the serverless working directory.
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     app = Flask(
         __name__,
-        template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "templates"),
-        static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "static"),
+        template_folder=os.path.join(project_root, "frontend", "templates"),
+        static_folder=os.path.join(project_root, "frontend", "static"),
         static_url_path="/static",
     )
     # Static import (not a string) so bundlers/file-tracers keep config.py:

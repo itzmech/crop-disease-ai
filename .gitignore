@@ -9,3 +9,4 @@ models/artifacts/*.keras
 models/artifacts/*.h5
 models/artifacts/*.pth
 !models/artifacts/labels.json
+.vercel/
