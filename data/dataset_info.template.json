@@ -1,0 +1,15 @@
+{
+  "_comment": "Template for real dataset facts. Copy to data/dataset_info.json and fill with YOUR measured values. The Research page renders whatever this file contains — nothing else.",
+  "name": "PlantVillage (subset used in this project)",
+  "source": "https://github.com/spMohanty/PlantVillage-Dataset",
+  "num_classes": null,
+  "num_images": null,
+  "num_train": null,
+  "num_val": null,
+  "num_test": null,
+  "split_ratio": "e.g. 70/15/15",
+  "classes": [
+    { "name": "Tomato - Early Blight", "images": null },
+    { "name": "Tomato - Late Blight", "images": null }
+  ]
+}

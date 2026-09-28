@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Severity Assessment — LeafLens AI{% endblock %}
+{% block meta_description %}Estimate the visibly affected area of a crop leaf using image-processing segmentation, with healthy/mild/moderate/severe banding.{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container inner">
+    <div class="crumbs"><a href="{{ url_for('index') }}">home</a> / severity assessment</div>
+    <span class="eyebrow">Image analysis</span>
+    <h1 class="mt-1">Severity Assessment</h1>
+    <p>Estimate the visible affected portion of a leaf with classical image processing — Otsu thresholding inside a segmented leaf mask, then colour-based lesion detection.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="result-grid">
+      <!-- LEFT: upload -->
+      <div>
+        <div class="card card-pad">
+          <div class="flex items-center justify-between mb-2">
+            <h3 style="margin:0;">Leaf image</h3>
+            <span class="badge badge-mute mono">JPG · PNG · JPEG</span>
+          </div>
+
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload leaf image: drag and drop or press Enter to browse">
+            <div>
+              <div class="dz-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+              </div>
+              <h3>Upload Leaf Image</h3>
+              <p class="muted" style="margin:0.2rem 0 0;">Drag &amp; drop your image here, or</p>
+              <div class="mt-1"><span class="btn btn-primary btn-sm">Choose Image</span></div>
+              <p class="dz-hint">A single leaf on a plain background works best.</p>
+            </div>
+          </div>
+          <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
+
+          <div id="previewWrap" class="preview-wrap hidden">
+            <img id="previewImg" alt="Selected leaf image preview">
+            <div class="preview-actions">
+              <button class="btn btn-ghost btn-sm" id="btnReplace">Replace image</button>
+              <button class="btn btn-ghost btn-sm" id="btnClear">Remove</button>
+            </div>
+            <p class="small muted mono" id="fileMeta"></p>
+          </div>
+        </div>
+
+        <div class="card card-pad mt-2">
+          <h3>How the estimate is produced</h3>
+          <ol class="small muted" style="padding-left: 1.2rem; margin: 0; display: grid; gap: .4rem;">
+            <li>Segment the leaf from the background (vegetation response + Otsu).</li>
+            <li>Keep the largest connected component as the leaf mask.</li>
+            <li>Classify lesion pixels by hue/saturation/value cues (brown, necrotic, chlorotic).</li>
+            <li>Report the affected fraction of the leaf area.</li>
+          </ol>
+          <div class="disclaimer mt-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span>Severity represents the estimated visible affected leaf area and should not be interpreted as ground-truth disease severity.</span>
+          </div>
+          <button class="btn btn-primary btn-lg mt-2" id="btnAssess" style="width:100%;" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 3 5-6"/></svg>
+            Assess Severity
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: gauge / states -->
+      <div id="resultRegion">
+        <div class="card card-pad hidden" id="loadingCard">
+          <div class="flex items-center gap-1 mb-2">
+            <div class="spinner" style="border-color: rgba(22,69,43,.25); border-top-color: var(--forest-700);"></div>
+            <h3 style="margin:0;">Measuring affected area…</h3>
+          </div>
+          <ul class="steps mt-2" id="analysisSteps">
+            <li data-step="upload"><span class="box"></span> Processing image</li>
+            <li data-step="mask"><span class="box"></span> Segmenting leaf mask</li>
+            <li data-step="lesion"><span class="box"></span> Detecting lesion pixels</li>
+            <li data-step="band"><span class="box"></span> Banding severity</li>
+          </ul>
+          <p class="small muted mt-2">All steps run in the Flask backend on the real image — nothing is simulated.</p>
+        </div>
+
+        <div class="state show" data-state="empty" style="height:100%;">
+          <div class="state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 3 5-6"/></svg>
+          </div>
+          <h4>No assessment yet</h4>
+          <p>Upload a leaf image and press <b>Assess Severity</b>. Values appear only when the backend completes a real measurement.</p>
+        </div>
+
+        <div class="state error" data-state="error">
+          <div class="state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+          </div>
+          <h4>Severity assessment unavailable</h4>
+          <p id="errorMessage">The affected leaf region could not be reliably segmented.</p>
+          <p class="small muted" id="errorCode"></p>
+        </div>
+
+        <div class="hidden" id="resultsPanel">
+          <div class="card card-pad mb-2">
+            <div class="flex items-center justify-between mb-1">
+              <h3 style="margin:0;">Visible Affected Area</h3>
+              <span class="badge badge-mute mono" id="sevMethod">otsu_within_leaf_mask</span>
+            </div>
+            <div class="gauge-wrap">
+              <div class="gauge">
+                <svg viewBox="0 0 110 110">
+                  <circle class="track" cx="55" cy="55" r="46"></circle>
+                  <circle class="meter" id="gaugeMeter" cx="55" cy="55" r="46" stroke="var(--leaf-500)"></circle>
+                </svg>
+                <div class="readout">
+                  <div class="pct" id="sevPct">—%</div>
+                  <div class="sub">of leaf area affected</div>
+                </div>
+                <div class="center mt-1"><span class="badge badge-green" id="sevBadge">—</span></div>
+              </div>
+            </div>
+
+            <div class="sev-scale" id="sevScale">
+              <div class="seg" data-band="Healthy">Healthy</div>
+              <div class="seg" data-band="Mild">Mild</div>
+              <div class="seg" data-band="Moderate">Moderate</div>
+              <div class="seg" data-band="Severe">Severe</div>
+            </div>
+
+            <div class="meter-h mt-3" aria-hidden="true">
+              <i id="sevMeterFill"></i><span class="tick" style="margin-left: -1px;"></span>
+            </div>
+            <div class="flex justify-between small muted mono" style="margin-top:.3rem;">
+              <span>0%</span><span>5%</span><span>25%</span><span>50%+</span>
+            </div>
+          </div>
+
+          <div class="card card-pad mb-2">
+            <div class="flex items-center justify-between mb-1">
+              <h3 style="margin:0;">Segmentation preview</h3>
+              <span class="small muted">server-computed</span>
+            </div>
+            <div id="maskBox"></div>
+            <p class="small muted mt-1" id="maskNote"></p>
+          </div>
+
+          <dl class="card card-pad" style="margin:0;">
+            <h3 style="margin-bottom:.8rem;">Measurement details</h3>
+            <dt class="muted small">Leaf pixels (share of image)</dt><dd class="mono" id="sevLeafRatio">—</dd>
+            <dt class="muted small mt-1">Lesion ratio within leaf</dt><dd class="mono" id="sevLesionRatio">—</dd>
+            <dt class="muted small mt-1">Banding rule</dt><dd class="mono" id="sevBanding">—</dd>
+          </dl>
+
+          <div class="disclaimer mt-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span>Severity represents the estimated visible affected leaf area and should not be interpreted as ground-truth disease severity.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/severity.js') }}"></script>
+{% endblock %}

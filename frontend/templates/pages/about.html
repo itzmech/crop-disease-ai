@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}About — LeafLens AI{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container inner">
+    <div class="crumbs"><a href="{{ url_for('index') }}">home</a> / about</div>
+    <span class="eyebrow">About the project</span>
+    <h1 class="mt-1">LeafLens AI</h1>
+    <p>A final-year B.Tech project exploring how deep learning, classical image processing and explainable AI can work together on a practical crop-health problem — with an interface that never shows a number the backend didn't produce.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="grid-2">
+      <div class="card card-pad reveal">
+        <span class="eyebrow">Goals</span>
+        <h3 class="mt-1">Why this project exists</h3>
+        <p class="small">Crop diseases can devastate yield, and diagnoses often depend on expert availability. This project investigates whether CNN-based detection, visible-severity estimation and gradient-based explanations can be delivered through a single, honest research interface — where every figure is traceable to the connected backend.</p>
+        <p class="small" style="margin:0;">The guiding rule of both the code and the UI: <b>if the backend cannot produce a result, the interface says so — it never invents one.</b></p>
+      </div>
+
+      <div class="card card-pad reveal">
+        <span class="eyebrow">Demonstration guide</span>
+        <h3 class="mt-1">What to try during the viva</h3>
+        <ol class="small" style="margin:0; padding-left:1.2rem; display:grid; gap:.4rem;">
+          <li><b>Home</b> — live system status strip reads <span class="mono">/api/status</span>.</li>
+          <li><b>Disease Detection</b> — upload a leaf, pick a model, watch the real loading steps.</li>
+          <li><b>Severity</b> — image-processing estimate with banded categories and disclaimers.</li>
+          <li><b>Explainable AI</b> — Grad-CAM heatmap + overlay with opacity slider and download.</li>
+          <li><b>Model Comparison</b> — metrics table, charts and confusion matrices from registered evaluation files.</li>
+          <li><b>Research</b> — dataset statistics streamed from <span class="mono">data/dataset_info.json</span>.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="section-head reveal mt-4" style="margin-top:3rem;">
+      <span class="eyebrow">Stack</span>
+      <h2>Built with</h2>
+    </div>
+    <div class="tech-grid">
+      <div class="tech-chip"><span class="t-ico">Py</span> Python 3.12</div>
+      <div class="tech-chip"><span class="t-ico">⚡</span> Flask REST API</div>
+      <div class="tech-chip"><span class="t-ico">🧠</span> TensorFlow / Keras</div>
+      <div class="tech-chip"><span class="t-ico">👁</span> OpenCV · Pillow · NumPy</div>
+      <div class="tech-chip"><span class="t-ico">🕹</span> Jinja2 templates</div>
+      <div class="tech-chip"><span class="t-ico">🌊</span> Vanilla CSS design system</div>
+      <div class="tech-chip"><span class="t-ico">📈</span> Chart.js</div>
+      <div class="tech-chip"><span class="t-ico">🎯</span> Grad-CAM</div>
+    </div>
+
+    <div class="card card-pad reveal mt-4 team-note" style="margin-top:3rem;">
+      <span class="avatar">BT</span>
+      <div>
+        <h3 style="margin-bottom:.3rem;">Final-year B.Tech project</h3>
+        <p class="small" style="margin:0;">Full project title: <b>AI-Based Crop Disease Detection and Severity Assessment Using Deep Learning and Explainable AI</b>. Built as a proof-of-concept research platform; predictions are research outputs, not agricultural advice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

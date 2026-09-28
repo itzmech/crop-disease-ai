@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Research & Methodology — LeafLens AI{% endblock %}
+{% block meta_description %}Dataset, pipeline, architectures and evaluation methodology behind the LeafLens AI crop-disease research project.{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container inner">
+    <div class="crumbs"><a href="{{ url_for('index') }}">home</a> / research</div>
+    <span class="eyebrow">Methodology</span>
+    <h1 class="mt-1">Research &amp; Methodology</h1>
+    <p>The dataset facts below are read live from <span class="mono">data/dataset_info.json</span> via the backend — until that file is registered, the section reports “not available” rather than quoting memorized numbers.</p>
+  </div>
+</section>
+
+<!-- ==================== DATASET (LIVE) ==================== -->
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Dataset</span>
+      <h2 id="datasetTitle">PlantVillage</h2>
+      <p>A public benchmark of crop-leaf photographs organized by crop and disease, used to train and evaluate all four architectures.</p>
+    </div>
+
+    <div id="datasetRegion">
+      <div class="state show" data-state="empty">
+        <div class="state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        </div>
+        <h4>Dataset information not available</h4>
+        <p>Register <span class="mono">data/dataset_info.json</span> (classes, image counts, splits) and reload — numbers shown here always come from the backend, never from hardcoded placeholders.</p>
+      </div>
+      <div class="hidden" id="datasetPanel"></div>
+    </div>
+
+    <div class="note mt-2 reveal">
+      The PlantVillage images are captured under controlled conditions; models trained only on them can degrade on field photographs. The methodology therefore emphasizes explainability and honest uncertainty rather than leaderboard accuracy alone.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PIPELINE ==================== -->
+<section class="section" style="background: linear-gradient(180deg, transparent, rgba(47,158,95,.05) 30%, transparent);">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Pipeline</span>
+      <h2>End-to-end methodology</h2>
+    </div>
+    <div class="pipeline">
+      <div class="card stage reveal">
+        <span class="idx">01</span>
+        <div><h3>Data &amp; preprocessing</h3>
+        <p>Images are resized to each architecture's input resolution, normalized, and split into train/validation/test partitions with stratification by class.</p></div>
+      </div>
+      <div class="card stage reveal">
+        <span class="idx">02</span>
+        <div><h3>Augmentation</h3>
+        <p>Random flips, rotations and brightness/contrast shifts improve robustness to lighting and orientation differences in real photos.</p></div>
+      </div>
+      <div class="card stage reveal">
+        <span class="idx">03</span>
+        <div><h3>Model training</h3>
+        <p>Four architectures are trained under comparable budgets: a Custom CNN and three transfer-learning backbones (ResNet50, MobileNetV2, EfficientNetB0) with class-balanced loss.</p></div>
+      </div>
+      <div class="card stage reveal">
+        <span class="idx">04</span>
+        <div><h3>Evaluation</h3>
+        <p>Test-set accuracy, precision, recall and F1 are computed once per model and registered as JSON; the dashboard only ever displays those measured files.</p></div>
+      </div>
+      <div class="card stage reveal">
+        <span class="idx">05</span>
+        <div><h3>Explainability</h3>
+        <p>Grad-CAM attributes each prediction to spatial regions by weighting the last convolutional feature maps with class gradients.</p></div>
+      </div>
+      <div class="card stage reveal">
+        <span class="idx">06</span>
+        <div><h3>Severity estimation</h3>
+        <p>An image-processing branch (leaf segmentation → lesion colour cues → affected-area ratio) estimates visible severity independently of the classifier.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ARCHITECTURES ==================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Architectures</span>
+      <h2>Four models under study</h2>
+    </div>
+    <div class="arch-grid">
+      <article class="card card-pad card-hover reveal">
+        <span class="badge badge-green mb-1">Baseline</span>
+        <h3>Custom CNN</h3>
+        <p class="small">A compact convolutional network trained from scratch — 3–5 conv blocks with batch normalization and dropout. Establishes the reference point that transfer learning must beat.</p>
+      </article>
+      <article class="card card-pad card-hover reveal">
+        <span class="badge badge-green mb-1">Transfer learning</span>
+        <h3>ResNet50</h3>
+        <p class="small">Residual connections ease training of very deep networks on small datasets; the frozen-backbone-then-finetune recipe is applied with a new classification head.</p>
+      </article>
+      <article class="card card-pad card-hover reveal">
+        <span class="badge badge-green mb-1">Edge-oriented</span>
+        <h3>MobileNetV2</h3>
+        <p class="small">Depthwise-separable convolutions and inverted residuals trade a little accuracy for a large reduction in parameters and latency — the deployment candidate.</p>
+      </article>
+      <article class="card card-pad card-hover reveal">
+        <span class="badge badge-green mb-1">Compound scaling</span>
+        <h3>EfficientNetB0</h3>
+        <p class="small">Neural-architecture-search-derived scaling of depth, width and resolution; typically the strongest accuracy-per-parameter trade-off in the study.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== GRAD-CAM THEORY ==================== -->
+<section class="section-tight">
+  <div class="container">
+    <div class="grid-2">
+      <div class="card card-pad reveal">
+        <span class="eyebrow">Theory</span>
+        <h3 class="mt-1">How Grad-CAM works</h3>
+        <p class="small">For a predicted class <span class="mono">c</span>, gradients of the class score are propagated to the final convolutional feature maps <span class="mono">A^k</span>. Global-average-pooled gradients <span class="mono">α_k^c</span> weight each map, and a ReLU over the weighted sum yields a coarse localization:</p>
+        <p class="mono small" style="background: #faf9f2; border: 1px solid var(--line); border-radius: 12px; padding: .8rem 1rem;">L^c = ReLU( Σ_k α_k^c · A^k ),&nbsp; α_k^c = (1/Z) Σ_i Σ_j ∂y^c / ∂A^k_ij</p>
+        <p class="small" style="margin:0;">Because the attribution is computed from the actual model on the actual input, every heatmap on this site is evidence — not decoration.</p>
+      </div>
+      <div class="card card-pad reveal">
+        <span class="eyebrow">Ethics &amp; limitations</span>
+        <h3 class="mt-1">What this system is not</h3>
+        <ul class="small" style="margin: 0; padding-left: 1.1rem; display: grid; gap: .45rem;">
+          <li>Severity is a <b>visible-area estimate</b>, not ground-truth disease load.</li>
+          <li>Low-confidence outputs are flagged, not hidden — they are part of honest science.</li>
+          <li>No result is fabricated when models or files are missing; the UI reports unavailability.</li>
+          <li>Outputs are research demonstrations, not agricultural or economic advice.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== REFERENCES ==================== -->
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head reveal"><span class="eyebrow">References</span><h2>Key sources</h2></div>
+    <div class="card card-pad reveal">
+      <ol class="small" style="margin:0; padding-left: 1.2rem; display:grid; gap:.5rem;">
+        <li>Selvaraju, R. R. et al. <i>Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization.</i> ICCV, 2017.</li>
+        <li>He, K. et al. <i>Deep Residual Learning for Image Recognition.</i> CVPR, 2016.</li>
+        <li>Sandler, M. et al. <i>MobileNetV2: Inverted Residuals and Linear Bottlenecks.</i> CVPR, 2018.</li>
+        <li>Tan, M. &amp; Le, Q. <i>EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks.</i> ICML, 2019.</li>
+        <li>Hughes, D. P. &amp; Salathé, M. <i>An open access repository of images on plant health: PlantVillage.</i> 2015.</li>
+        <li>Otsu, N. <i>A Threshold Selection Method from Gray-Level Histograms.</i> IEEE Trans. SMC, 1979.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/research.js') }}"></script>
+{% endblock %}

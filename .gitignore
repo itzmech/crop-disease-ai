@@ -1,0 +1,11 @@
+.venv/
+.freebuff/
+__pycache__/
+*.pyc
+.env
+data/*.log
+data/uploads/
+models/artifacts/*.keras
+models/artifacts/*.h5
+models/artifacts/*.pth
+!models/artifacts/labels.json

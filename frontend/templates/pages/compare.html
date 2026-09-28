@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Model Comparison — LeafLens AI{% endblock %}
+{% block meta_description %}Research dashboard comparing Custom CNN, ResNet50, MobileNetV2 and EfficientNetB0 with measured accuracy, precision, recall, F1, latency and size.{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container inner">
+    <div class="crumbs"><a href="{{ url_for('index') }}">home</a> / model comparison</div>
+    <span class="eyebrow">Research dashboard</span>
+    <h1 class="mt-1">Deep Learning Model Comparison</h1>
+    <p>Every figure below is read from evaluation files registered on the server (<span class="mono">models/evaluation/*.json</span>). If a model has not been evaluated, its row reports “not available” — no placeholders, no invented percentages.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <!-- ==================== METRICS TABLE ==================== -->
+    <div class="section-head reveal">
+      <span class="eyebrow">Evaluation metrics</span>
+      <h2>Test-set performance</h2>
+    </div>
+    <div id="tableRegion">
+      <div class="state show" data-state="empty">
+        <div class="state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+        </div>
+        <h4>Evaluation not available</h4>
+        <p>Train and evaluate this model to view results.</p>
+      </div>
+      <div class="state error" data-state="error">
+        <div class="state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        </div>
+        <h4>Could not load evaluation data</h4>
+        <p id="tableError">The server did not respond.</p>
+      </div>
+      <div class="hidden" id="tablePanel"></div>
+    </div>
+
+    <!-- ==================== CHARTS ==================== -->
+    <div class="section-head reveal mt-4" id="chartsSection" style="margin-top:3rem;">
+      <span class="eyebrow">Visualization</span>
+      <h2>Interactive charts</h2>
+      <p>Charts render only from the same API data that feeds the table — unavailable models are excluded, never filled with zeros.</p>
+    </div>
+    <div id="chartsRegion">
+      <div class="state show" data-state="empty">
+        <div class="state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 3 5-6"/></svg>
+        </div>
+        <h4>Charts unavailable</h4>
+        <p>Charts appear once at least one model has evaluation data on the server.</p>
+      </div>
+      <div class="hidden" id="chartsPanel">
+        <div class="chart-grid">
+          <div class="card chart-card">
+            <h3>Model Accuracy</h3>
+            <p class="small muted" style="margin-top:-.4rem;">Test accuracy by architecture</p>
+            <div class="chart-box"><canvas id="chartAccuracy" aria-label="Model accuracy bar chart" role="img"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <h3>Precision / Recall / F1</h3>
+            <p class="small muted" style="margin-top:-.4rem;">Grouped comparison</p>
+            <div class="chart-box"><canvas id="chartPRF" aria-label="Precision recall F1 grouped bar chart" role="img"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <h3>Inference Time</h3>
+            <p class="small muted" style="margin-top:-.4rem;">Per-image latency, lower is better</p>
+            <div class="chart-box"><canvas id="chartLatency" aria-label="Inference time bar chart" role="img"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <h3>Training History</h3>
+            <p class="small muted" style="margin-top:-.4rem;">
+              <select id="historySelect" class="select" style="width:auto; padding:.35rem .7rem; font-size:.85rem;">
+                <option value="">Select model…</option>
+              </select>
+            </p>
+            <div class="chart-box tall"><canvas id="chartHistory" aria-label="Training history line chart" role="img"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CONFUSION MATRIX ==================== -->
+    <div class="section-head reveal mt-4" style="margin-top:3rem;">
+      <span class="eyebrow">Error analysis</span>
+      <h2>Confusion matrix</h2>
+      <p>Pick a model to inspect its test-set confusion matrix. Rows are true classes, columns are predictions.</p>
+    </div>
+    <div class="card card-pad mb-2" style="max-width: 420px;">
+      <label class="field-label" for="cmSelect">Select Model</label>
+      <select id="cmSelect" class="select">
+        <option value="">Select Model</option>
+      </select>
+    </div>
+    <div id="cmRegion">
+      <div class="state show" data-state="empty">
+        <div class="state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </div>
+        <h4>Matrix not available</h4>
+        <p>Select a model, or register <span class="mono">models/confusion/&lt;model&gt;.json</span> to display its matrix.</p>
+      </div>
+      <div class="state error" data-state="error">
+        <div class="state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        </div>
+        <h4>Could not load matrix</h4>
+        <p id="cmError">The server did not respond.</p>
+      </div>
+      <div class="hidden" id="cmPanel">
+        <div class="card card-pad">
+          <div class="flex items-center justify-between flex-wrap gap-1 mb-2">
+            <h3 style="margin:0;" id="cmTitle">—</h3>
+            <span class="badge badge-mute mono" id="cmEvaluatedOn"></span>
+          </div>
+          <div class="cm-wrap" id="cmWrap"></div>
+          <div class="cm-title">Predicted class →</div>
+          <div class="mt-2 small muted">Rows = true class · Columns = predicted class · Cell value = samples, colour = row share</div>
+        </div>
+        <div class="card card-pad mt-2" style="max-width: 380px;">
+          <h3>Key metrics</h3>
+          <dl class="kv" id="cmMetrics"></dl>
+        </div>
+        <div class="mt-2">
+          <label class="field-label" for="cmMode">Display mode</label>
+          <select id="cmMode" class="select" style="max-width: 260px;">
+            <option value="counts">Counts</option>
+            <option value="row_normalized">Row-normalized (recall per class)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/compare.js') }}"></script>
+{% endblock %}

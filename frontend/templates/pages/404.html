@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Page not found — LeafLens AI{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container center">
+    <div class="mono muted" style="font-size: .9rem; letter-spacing: .2em;">HTTP 404</div>
+    <h1 style="font-size: clamp(4rem, 12vw, 7rem); margin: .2em 0;">404</h1>
+    <p class="lead" style="max-width: 46ch; margin: 0 auto 1.6rem;">This page doesn't exist — but the analyzer does.</p>
+    <div class="flex gap-2 justify-center flex-wrap">
+      <a class="btn btn-primary" href="{{ url_for('index') }}">Back to Home</a>
+      <a class="btn btn-ghost" href="{{ url_for('detect') }}">Analyze a Leaf</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
