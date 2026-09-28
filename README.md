@@ -30,7 +30,27 @@ pip install tensorflow               # ~2 GB; only needed to serve models
 > The site runs fully without TensorFlow — every AI feature then renders a proper
 > "model unavailable" state, which is exactly what the no-fake-results policy requires.
 
-## 2. Project layout
+## 2. Deploying to Vercel
+
+The repository root contains **`app.py`**, which exposes the module-level `app` variable that
+Vercel's Python runtime loads as the default entrypoint (`app.py:app`). It simply imports the
+existing factory — the application is not duplicated anywhere.
+
+1. Import this repo into Vercel (no build settings needed; `requirements.txt` supplies the deps).
+2. Deploy. Routes, templates, static files and the `/api/*` endpoints all work as-is.
+
+Vercel-specific limitations:
+
+- **Serverless filesystem is read-only** — handled automatically: directory creation is skipped
+  and no route writes to disk (uploads are processed fully in memory).
+- **TensorFlow is not in `requirements.txt`** — on Vercel, `/api/predict` and `/api/gradcam`
+  return honest `model_unavailable` states until you extend the runtime; the severity pipeline
+  and the whole dashboard work without it.
+- **Model/evaluation files are git-ignored** — register them in the repo or via `MODEL_DIR` if
+  you want the comparison dashboard populated on Vercel.
+- First request after a cold start may be slower (function cold boot).
+
+## 3. Project layout
 
 ```
 run.py                     dev server entrypoint
@@ -60,7 +80,7 @@ data/
   uploads/                 runtime uploads (git-ignored)
 ```
 
-## 3. Serving your trained models
+## 4. Serving your trained models
 
 Drop Keras files into `models/artifacts/` using the registered filenames
 (configurable in `backend/config.py`):
@@ -82,7 +102,7 @@ Verify with:
 curl http://127.0.0.1:5000/api/status
 ```
 
-## 4. API reference
+## 5. API reference
 
 All endpoints return JSON. Errors use `{ "ok": false, "error": code, "message": … }`.
 
@@ -127,7 +147,7 @@ Unavailability (503) — the frontend renders this as an honest error card:
   "message": "The trained model file 'efficientnet_b0.keras' was not found on the server. …" }
 ```
 
-## 5. Registering evaluation results (Model Comparison page)
+## 6. Registering evaluation results (Model Comparison page)
 
 `models/evaluation/<model_id>.json`:
 
@@ -164,7 +184,7 @@ Unavailability (503) — the frontend renders this as an honest error card:
 
 Filenames are matched loosely (e.g. `EfficientNetB0.json` works for `efficientnetb0`).
 
-## 6. No-fake-results guarantees
+## 7. No-fake-results guarantees
 
 - Prediction values, confidence, latency → **only** from `/api/predict` on the real model.
 - Grad-CAM images → **only** from `/api/gradcam` (server-side autodiff), downloadable PNG.
@@ -174,14 +194,14 @@ Filenames are matched loosely (e.g. `EfficientNetB0.json` works for `efficientne
   files you register; missing files render "Evaluation not available" states.
 - The home-page status strip reflects actual `/api/status` (TF installed? models present?).
 
-## 7. Configuration
+## 8. Configuration
 
 Environment variables (see `.env.example`): `SECRET_KEY`, `MAX_UPLOAD_MB`,
 `MODEL_DIR`, `GRADCAM_ENABLED`, `GRADCAM_LAYER`, `GRADCAM_MAX_DIM`, `DATASET_INFO_PATH`.
 
 Severity bands live in `backend/config.py` (`SEVERITY_BANDS`).
 
-## 8. Tech stack
+## 9. Tech stack
 
 Flask 3 · Jinja2 · vanilla CSS design system (Sora/Inter/JetBrains Mono) ·
 Chart.js 4 (CDN) · Pillow · NumPy · OpenCV (optional, better masks) · TensorFlow (optional,

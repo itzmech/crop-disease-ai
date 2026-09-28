@@ -1,4 +1,9 @@
-"""LeafLens AI — Flask application factory."""
+"""LeafLens AI — Flask application factory.
+
+``create_app()`` tolerates read-only filesystems (e.g. Vercel serverless):
+runtime directories that cannot be created there are skipped, and none of
+the app's routes write to disk (uploads are processed fully in memory).
+"""
 import logging
 import os
 
@@ -19,9 +24,20 @@ def create_app():
     )
     app.config.from_object("backend.config.Config")
 
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    for d in (app.config["EVALUATION_DIR"], app.config["HISTORY_DIR"], app.config["CONFUSION_DIR"]):
-        os.makedirs(d, exist_ok=True)
+    # Runtime directories are optional (read-only FS safe). The app never
+    # writes to disk: uploaded images are processed entirely in memory.
+    for d in (
+        app.config["UPLOAD_FOLDER"],
+        app.config["EVALUATION_DIR"],
+        app.config["HISTORY_DIR"],
+        app.config["CONFUSION_DIR"],
+    ):
+        try:
+            os.makedirs(d, exist_ok=True)
+        except (OSError, PermissionError):
+            logging.getLogger(__name__).info(
+                "Skipping directory creation for read-only filesystem: %s", d
+            )
 
     app.register_blueprint(api)
 
