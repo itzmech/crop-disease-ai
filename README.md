@@ -36,8 +36,11 @@ The repository root contains **`app.py`**, which exposes the module-level `app` 
 Vercel's Python runtime loads as the default entrypoint (`app.py:app`). It simply imports the
 existing factory — the application is not duplicated anywhere.
 
-1. Import this repo into Vercel (no build settings needed; `requirements.txt` supplies the deps).
-2. Deploy. Routes, templates, static files and the `/api/*` endpoints all work as-is.
+1. Import this repo into Vercel — `requirements.txt` supplies dependencies and
+   `.python-version` pins Python 3.12.
+2. Deploy. `vercel.json` explicitly includes `backend/**` and `frontend/**` in the function
+   bundle (Vercel's static file-tracer misses template/static references), and routes,
+   templates, static files and the `/api/*` endpoints all work as-is.
 
 Vercel-specific limitations:
 

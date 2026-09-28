@@ -10,6 +10,7 @@ import os
 from flask import Flask, render_template
 
 from backend.api import api
+from backend.config import Config
 from backend.errors import register_error_handlers
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -22,7 +23,10 @@ def create_app():
         static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "static"),
         static_url_path="/static",
     )
-    app.config.from_object("backend.config.Config")
+    # Static import (not a string) so bundlers/file-tracers keep config.py:
+    # a from_object("backend.config.Config") string import is invisible to
+    # static analysis and gets omitted from serverless bundles (Vercel).
+    app.config.from_object(Config)
 
     # Runtime directories are optional (read-only FS safe). The app never
     # writes to disk: uploaded images are processed entirely in memory.

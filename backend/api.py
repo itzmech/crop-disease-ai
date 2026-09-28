@@ -26,7 +26,8 @@ def _err(code, message, status):
 # --------------------------------------------------------------------------- #
 @api.get("/health")
 def health():
-    return _ok({"status": "healthy", "service": "LeafLens AI"})
+    """Liveness probe — deliberately touches no ML/model code."""
+    return _ok({"status": "ok", "service": "crop-disease-ai", "label": "LeafLens AI"})
 
 
 @api.get("/status")
